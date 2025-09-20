@@ -51,7 +51,6 @@ app.post('/whatsapp', async (req, res) => {
 
     const message = twimlResponse.message();
     message.body(body);
-    if (p.imagem) message.media(p.imagem);
 
     sessao.passo++;
     console.log(`📊 Enviando pergunta 1 (${p.area}), passo agora ${sessao.passo}`);
@@ -83,7 +82,7 @@ app.post('/whatsapp', async (req, res) => {
             sessao.respostas[p_ant.entry_id] = p_ant.opcoes[num - 1];
             console.log(`✅ Resposta para ${p_ant.area}: ${p_ant.opcoes[num - 1]}`);
           } else {
-            console.log(`⚠️ Opcão inválida: ${msg}`);
+            console.log(`⚠️ Opção inválida: ${msg}`);
             twimlResponse.message('❌ Opção inválida. Por favor, digite um número válido da lista.');
             return res.type('text/xml').send(twimlResponse.toString());
           }
@@ -93,7 +92,6 @@ app.post('/whatsapp', async (req, res) => {
           return res.type('text/xml').send(twimlResponse.toString());
         }
       }
-      // avança passo se não estiver esperando sugestao
       sessao.passo++;
     }
 
@@ -111,7 +109,6 @@ app.post('/whatsapp', async (req, res) => {
 
       const message = twimlResponse.message();
       message.body(body);
-      if (p.imagem) message.media(p.imagem);
 
       console.log(`📊 Enviando pergunta ${(sessao.passo + 1)} (${p.area}), passo agora ${sessao.passo}`);
 
@@ -130,7 +127,7 @@ app.post('/whatsapp', async (req, res) => {
     const formUrl = process.env.GOOGLE_FORM_URL;
     const payload = new URLSearchParams();
 
-    // Substitua esse entry ID do nome se precisar
+    // Substitua o entry ID do nome, se necessário
     payload.append('entry.242666768', sessao.respostas.nome);
 
     perguntas.forEach(p => {
@@ -154,7 +151,6 @@ app.post('/whatsapp', async (req, res) => {
     return res.type('text/xml').send(twimlResponse.toString());
   }
 
-  // Fallback
   console.log(`⚠️ Fallback reached: etapa ${sessao.etapa}, passo ${sessao.passo}`);
   res.type('text/xml').send(twimlResponse.toString());
 });
