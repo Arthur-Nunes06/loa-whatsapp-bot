@@ -6,8 +6,7 @@ import fs from 'fs';
 
 dotenv.config();
 
-const { twiml } = twilio;
-const { MessagingResponse } = twiml;
+const { MessagingResponse } = twilio.twiml;
 
 const perguntas = JSON.parse(fs.readFileSync('./perguntas.json', 'utf-8'));
 
@@ -17,17 +16,11 @@ app.use(express.urlencoded({ extended: false }));
 const sessions = {};
 
 app.post('/whatsapp', async (req, res) => {
-  const rawFrom = req.body.From || '';
-  const from = rawFrom.replace('whatsapp:', '').trim(); // 👈 Corrigido aqui
+  const from = req.body.From;
   const msg = req.body.Body?.trim();
   const twimlResponse = new MessagingResponse();
 
-  if (!from || !msg) {
-    console.log('⚠️ Requisição inválida');
-    return res.status(400).end();
-  }
-
-  // Inicia sessão
+  // Se não tiver sessão, inicia
   if (!sessions[from]) {
     sessions[from] = {
       etapa: 'nome',
@@ -45,6 +38,12 @@ app.post('/whatsapp', async (req, res) => {
 
   // Etapa: Nome
   if (sessao.etapa === 'nome') {
+    // Aqui você pode validar se digitou um nome (não número)
+    if (/^\d+$/.test(msg)) {
+      twimlResponse.message('❌ Por favor, digite seu nome completo.');
+      return res.type('text/xml').send(twimlResponse.toString());
+    }
+
     sessao.respostas.nome = msg;
     sessao.etapa = 'perguntas';
     sessao.passo = 0;
@@ -59,7 +58,6 @@ app.post('/whatsapp', async (req, res) => {
     message.body(body);
     if (p.imagem) message.media(p.imagem);
 
-    sessao.passo++;
     console.log(`📊 Enviando pergunta 1 (${p.area}), passo agora ${sessao.passo}`);
 
     return res.type('text/xml').send(twimlResponse.toString());
@@ -68,39 +66,49 @@ app.post('/whatsapp', async (req, res) => {
   // Etapa: Perguntas
   if (sessao.etapa === 'perguntas') {
     if (sessao.esperandoSugestao) {
-      const anterior = perguntas[sessao.passo - 1];
+      // Grava sugestão livre
+      const anterior = perguntas[sessao.passo];
       sessao.respostas[anterior.entry_id] = msg;
       sessao.esperandoSugestao = false;
-      sessao.passo++;
-      console.log(`✍️ Sugestão para ${anterior.area}: ${msg}`);
-    } else {
-      const anterior = perguntas[sessao.passo - 1];
-      const p_ant = perguntas[sessao.passo - 1];
 
-      const num = parseInt(msg, 10);
-      if (!isNaN(num)) {
-        if (num === p_ant.opcoes.length + 1) {
-          sessao.esperandoSugestao = true;
-          twimlResponse.message('✍️ Por favor, escreva sua sugestão para esta área:');
-          return res.type('text/xml').send(twimlResponse.toString());
-        } else if (num >= 1 && num <= p_ant.opcoes.length) {
-          sessao.respostas[p_ant.entry_id] = p_ant.opcoes[num - 1];
-          console.log(`✅ Resposta para ${p_ant.area}: ${p_ant.opcoes[num - 1]}`);
-          sessao.passo++;
+      console.log(`✍️ Sugestão recebida para ${anterior.area}: ${msg}`);
+
+      sessao.passo++; // só incrementa após resposta
+    } else {
+      // Aqui grava resposta anterior, se existe pergunta respondida
+      const p_atual = perguntas[sessao.passo];
+
+      // Quando passo=0, ainda não enviou pergunta, então checa passo > 0 para pegar anterior
+      if (sessao.passo > 0) {
+        const p_anterior = perguntas[sessao.passo - 1];
+
+        const num = parseInt(msg, 10);
+        if (!isNaN(num)) {
+          if (num === p_anterior.opcoes.length + 1) {
+            sessao.esperandoSugestao = true;
+            console.log(`📝 Pessoa escolheu outra sugestão para ${p_anterior.area}`);
+            twimlResponse.message('✍️ Por favor, escreva sua sugestão para esta área:');
+            return res.type('text/xml').send(twimlResponse.toString());
+          } else if (num >= 1 && num <= p_anterior.opcoes.length) {
+            sessao.respostas[p_anterior.entry_id] = p_anterior.opcoes[num - 1];
+            console.log(`✅ Resposta para ${p_anterior.area}: ${p_anterior.opcoes[num - 1]}`);
+          } else {
+            console.log(`⚠️ Opção inválida: ${msg}`);
+            twimlResponse.message('❌ Opção inválida. Por favor, digite um número válido da lista.');
+            return res.type('text/xml').send(twimlResponse.toString());
+          }
         } else {
-          twimlResponse.message('❌ Opção inválida. Por favor, digite um número da lista.');
+          console.log(`⚠️ Não digitou número: ${msg}`);
+          twimlResponse.message('❌ Por favor, digite o número correspondente à opção desejada.');
           return res.type('text/xml').send(twimlResponse.toString());
         }
-      } else {
-        twimlResponse.message('❌ Por favor, envie apenas o número correspondente à opção.');
-        return res.type('text/xml').send(twimlResponse.toString());
       }
+
+      sessao.passo++; // incrementa só depois de salvar resposta
     }
 
-    // Verifica se terminou
     if (sessao.passo >= perguntas.length) {
       sessao.etapa = 'fim';
-      console.log(`🎯 Todas as perguntas respondidas. Indo para etapa final.`);
     }
 
     if (sessao.etapa === 'perguntas') {
@@ -114,23 +122,25 @@ app.post('/whatsapp', async (req, res) => {
       message.body(body);
       if (p.imagem) message.media(p.imagem);
 
-      console.log(`📊 Enviando pergunta ${sessao.passo + 1} (${p.area})`);
+      console.log(`📊 Enviando pergunta ${(sessao.passo + 1)} (${p.area}), passo agora ${sessao.passo}`);
+
       return res.type('text/xml').send(twimlResponse.toString());
     }
   }
 
-  // Etapa final - Envio do formulário
+  // Etapa: Fim e envio
   if (sessao.etapa === 'fim') {
     const last = perguntas[perguntas.length - 1];
     if (!sessao.respostas[last.entry_id]) {
       sessao.respostas[last.entry_id] = msg;
-      console.log(`📝 Última resposta: ${msg}`);
+      console.log(`📝 Última resposta região ${last.area}: ${msg}`);
     }
 
     const formUrl = process.env.GOOGLE_FORM_URL;
     const payload = new URLSearchParams();
 
-    payload.append('entry.242666768', sessao.respostas.nome); // Substitua se precisar
+    // Ajuste entry do nome conforme seu Google Form
+    payload.append('entry.242666768', sessao.respostas.nome);
 
     perguntas.forEach(p => {
       payload.append(`entry.${p.entry_id}`, sessao.respostas[p.entry_id] || '');
@@ -138,12 +148,14 @@ app.post('/whatsapp', async (req, res) => {
 
     try {
       await axios.post(formUrl, payload.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
-      console.log('📤 Respostas enviadas ao Google Forms');
+      console.log('📤 Enviado ao Google Forms');
       twimlResponse.message('✅ Obrigado! Suas respostas foram enviadas com sucesso.');
     } catch (err) {
-      console.error('❌ Erro ao enviar ao Google Forms:', err.message);
+      console.error('❌ Erro ao enviar para o Google Forms:', err);
       twimlResponse.message('❌ Ocorreu um erro ao enviar suas respostas.');
     }
 
@@ -151,12 +163,11 @@ app.post('/whatsapp', async (req, res) => {
     return res.type('text/xml').send(twimlResponse.toString());
   }
 
-  // fallback
-  console.log(`⚠️ Fallback ativado para etapa: ${sessao.etapa}`);
+  // Fallback
+  console.log(`⚠️ Fallback reached: etapa ${sessao.etapa}, passo ${sessao.passo}`);
   res.type('text/xml').send(twimlResponse.toString());
 });
 
-// Inicia o servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Bot rodando na porta ${PORT}`);
