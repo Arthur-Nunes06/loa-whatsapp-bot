@@ -68,8 +68,11 @@ app.post('/whatsapp', async (req, res) => {
       const anterior = perguntas[sessao.passo - 1];
       sessao.respostas[anterior.entry_id] = msg;
       sessao.esperandoSugestao = false;
+
+      // Avança para próxima pergunta depois da sugestão
+      sessao.passo++;
     } else {
-      // Se já respondeu uma pergunta antes, grava a resposta da anterior
+      // Grava resposta da pergunta anterior se não for a primeira
       if (sessao.passo > 0) {
         const anterior = perguntas[sessao.passo - 1];
         const p = perguntas[sessao.passo - 1];
@@ -77,29 +80,29 @@ app.post('/whatsapp', async (req, res) => {
         const num = parseInt(msg, 10);
         if (!isNaN(num)) {
           if (num === p.opcoes.length + 1) {
-            // Usuário escolheu "Outra sugestão"
             sessao.esperandoSugestao = true;
             twimlResponse.message('✍️ Por favor, escreva sua sugestão para esta área:');
             return res.type('text/xml').send(twimlResponse.toString());
           } else if (num >= 1 && num <= p.opcoes.length) {
-            // Escolheu uma opção válida
             sessao.respostas[p.entry_id] = p.opcoes[num - 1];
           } else {
-            // Opção inválida
             twimlResponse.message('❌ Opção inválida. Por favor, digite um número válido da lista.');
             return res.type('text/xml').send(twimlResponse.toString());
           }
         } else {
-          // Não digitou número
           twimlResponse.message('❌ Por favor, digite o número correspondente à opção desejada.');
           return res.type('text/xml').send(twimlResponse.toString());
         }
       }
+      // Avança o passo para enviar próxima pergunta
+      sessao.passo++;
     }
 
     if (sessao.passo >= perguntas.length) {
       sessao.etapa = 'fim';
-    } else {
+    }
+
+    if (sessao.etapa === 'perguntas') {
       const p = perguntas[sessao.passo];
       const body =
         `📌 *${p.area.toUpperCase()}*\n\nEscolha uma opção:\n\n` +
@@ -112,7 +115,6 @@ app.post('/whatsapp', async (req, res) => {
         message.media(p.imagem);
       }
 
-      sessao.passo++;
       return res.type('text/xml').send(twimlResponse.toString());
     }
   }
