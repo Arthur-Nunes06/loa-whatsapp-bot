@@ -1,0 +1,95 @@
+[
+  {
+    "area": "Saúde",
+    
+    "entry_id": "1174346922",
+    "opcoes": [
+      "Realização de exames de Radiografia",
+      "Ampliação e manutenção das especialidades médicas",
+      "Ampliação e manutenção de exames a serem ofertados aos usuários",
+      "Manutenção dos serviços do SAMU"
+    ]
+  },
+  {
+    "area": "Agricultura",
+    
+    "entry_id": "597380462",
+    "opcoes": [
+      "Conservação e melhoria de estradas vicinais",
+      "Pavimentação de estradas com revsol",
+      "Apoio ao associativismo e cooperativismo",
+      "Aquisição de máquinas e equipamentos para o meio rural",
+      "Construção da barragem de São Dalmácio",
+      "Pavimentação de estradas rurais"
+    ]
+  },
+  {
+    "area": "Urbanismo e Saneamento",
+    
+    "entry_id": "2104709977",
+    "opcoes": [
+      "Manutenção e Ampliação da rede de iluminação pública",
+      "Manutenção e Ampliação da rede de esgotamento sanitário",
+      "Manutenção e Ampliação da coleta de lixo domiciliar",
+      "Manutenção e Ampliação da limpeza das vias públicas",
+      "Recapeamento e manutenção das vias urbanas",
+      "Pavimentação de vias",
+      "Construção do Cemitério Municipal"
+    ]
+  },
+  {
+    "area": "Desporto, lazer, cultura e comércio",
+    
+    "entry_id": "1099097925",
+    "opcoes": [
+      "Construção de espaço destinado a eventos municipais",
+      "Apoio à música e dança",
+      "Apoio à ações voltadas ao turismo",
+      "Construção, reforma e ampliação de praças",
+      "Construção, reforma e ampliação de quadras esportivas"
+    ]
+  },
+  {
+    "area": "Meio Ambiente",
+        "entry_id": "714430131",
+    "opcoes": [
+      "Ações de conscientização e preservação do meio ambiente",
+      "Ações relacionadas ao bem estar animal",
+      "Ampliação e manutenção dos serviços de licenciamento ambiental",
+      "Ampliação e manutenção no programa de projeto de barragens rurais"
+    ]
+  },
+  {
+    "area": "Educação",
+
+    "entry_id": "190513786",
+    "opcoes": [
+      "Construção, reforma e ampliação das unidades escolares",
+      "Manutenção e ampliação da oferta de transporte escolar",
+      "Aquisição de tecnologia e materiais pedagógicos",
+      "Implantação de atividades extra curriculares",
+      "Implantação de mais unidades de estudo em tempo integral",
+      "Construção de novas unidades escolares para educação infantil"
+    ]
+  },
+  {
+    "area": "Segurança",
+    
+    "entry_id": "474629912",
+    "opcoes": [
+      "Obras de contenção em áreas de risco"
+    ]
+  },
+  {
+    "area": "Assistência Social",
+    "entry_id": "1632763624",
+    "opcoes": [
+      "Manutenção e ampliação dos serviços prestados pelo CREAS",
+      "Manutenção e ampliação dos serviços prestados pelo CRAS",
+      "Manutenção e ampliação dos Benefícios de Política Assistencial",
+      "Apoio Financeiro a Entidades de Assistência a Pessoas com Necessidades Especiais",
+      "Apoio Financeiro a Entidades de Assistência à Criança e ao Adolescente",
+      "Construção de Centros de Convivência"
+    ]
+  }
+]
