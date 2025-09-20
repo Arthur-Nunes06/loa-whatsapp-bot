@@ -41,6 +41,24 @@ app.post('/whatsapp', async (req, res) => {
   if (sessao.etapa === 'nome') {
     sessao.respostas.nome = msg;
     sessao.etapa = 'perguntas';
+    sessao.passo = 0; // garante que começa do zero
+
+    // envia a primeira pergunta logo após o nome
+    const p = perguntas[sessao.passo];
+    const body =
+      `📌 *${p.area.toUpperCase()}*\n\nEscolha uma opção:\n\n` +
+      p.opcoes.map((op, i) => `${i + 1}️⃣ ${op}`).join('\n') +
+      `\n${p.opcoes.length + 1}️⃣ Outra sugestão (escreva)`;
+
+    const message = twimlResponse.message();
+    message.body(body);
+    if (p.imagem) {
+      message.media(p.imagem);
+    }
+
+    sessao.passo++; // avança para a próxima pergunta na próxima interação
+
+    return res.type('text/xml').send(twimlResponse.toString());
   }
 
   // Etapa: Perguntas
